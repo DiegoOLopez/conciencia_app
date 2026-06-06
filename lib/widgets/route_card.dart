@@ -1,8 +1,9 @@
 // ConciencIA — Tarjeta de ruta.
-// Muestra score, tiempo, riesgo y explicación.
+// Muestra score, tiempo, riesgo y desglose de segmentos por modo.
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/route_request.dart';
 import '../models/route_response.dart';
 
 class RouteCard extends StatelessWidget {
@@ -16,6 +17,30 @@ class RouteCard extends StatelessWidget {
     required this.isSelected,
     required this.color,
   });
+
+  // Colores de modos (espeja map_widget)
+  static Color _modeColor(TransportMode mode) {
+    switch (mode) {
+      case TransportMode.walk:
+        return const Color(0xFF757575);
+      case TransportMode.bike:
+        return const Color(0xFF34A853);
+      case TransportMode.lightRail:
+        return const Color(0xFF7B1FA2);
+      case TransportMode.rtp:
+        return const Color(0xFF00897B);
+      case TransportMode.metro:
+        return const Color(0xFFE53935);
+      case TransportMode.metrobus:
+        return const Color(0xFFD81B60);
+      case TransportMode.bus:
+        return const Color(0xFF1976D2);
+      case TransportMode.car:
+        return const Color(0xFF424242);
+      case TransportMode.trolleybus:
+        return const Color(0xFF0288D1);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,10 +69,9 @@ class RouteCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Header: Rank + Tiempo + Badge ---
+          // ── Header: Rank + Tiempo + Íconos ──────────────────────────────
           Row(
             children: [
-              // Badge de rank
               Container(
                 width: 32,
                 height: 32,
@@ -67,8 +91,6 @@ class RouteCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-
-              // Tiempo estimado
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,8 +115,6 @@ class RouteCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Íconos de modos de transporte
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: route.transportModesUsed
@@ -113,14 +133,19 @@ class RouteCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          // --- Barra de riesgo ---
+          // ── Barra de segmentos proporcional (estilo Google Maps) ─────────
+          _buildSegmentBar(),
+
+          const SizedBox(height: 10),
+
+          // ── Barra de riesgo ──────────────────────────────────────────────
           _buildRiskBar(),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          // --- Explicación ---
+          // ── Explicación ──────────────────────────────────────────────────
           Expanded(
             child: Text(
               route.explanation,
@@ -136,7 +161,7 @@ class RouteCard extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // --- Tags ---
+          // ── Tags ─────────────────────────────────────────────────────────
           if (route.tags.isNotEmpty)
             Wrap(
               spacing: 6,
@@ -164,6 +189,82 @@ class RouteCard extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+
+  /// Barra proporcional por segmento + chips de modo con distancia
+  Widget _buildSegmentBar() {
+    if (route.segments.isEmpty) return const SizedBox.shrink();
+
+    final totalDist = route.totalDistanceKm > 0 ? route.totalDistanceKm : 1.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Barra de color proporcional
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Row(
+            children: route.segments.map((seg) {
+              final frac = (seg.distanceKm / totalDist).clamp(0.03, 1.0);
+              final col = _modeColor(seg.mode);
+              final isWalk = seg.mode == TransportMode.walk;
+              return Expanded(
+                flex: (frac * 1000).round(),
+                child: Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isWalk ? col.withValues(alpha: 0.4) : col,
+                    border: isWalk
+                        ? Border.all(color: col.withValues(alpha: 0.6), width: 0.5)
+                        : null,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Chips por segmento
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: route.segments.map((seg) {
+            final col = _modeColor(seg.mode);
+            final isWalk = seg.mode == TransportMode.walk;
+            final distLabel = isWalk
+                ? '${(seg.distanceKm * 1000).round()}m'
+                : '${seg.distanceKm.toStringAsFixed(1)}km';
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: col.withValues(alpha: isWalk ? 0.08 : 0.13),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: col.withValues(alpha: isWalk ? 0.22 : 0.38),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(seg.mode.icon, style: const TextStyle(fontSize: 11)),
+                  const SizedBox(width: 3),
+                  Text(
+                    distLabel,
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      color: isWalk
+                          ? col.withValues(alpha: 0.85)
+                          : col,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 

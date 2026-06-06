@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../config/app_config.dart';
+import '../models/route_request.dart';
 import '../models/route_response.dart';
 
 class ConcienciaMapWidget extends StatefulWidget {
@@ -173,7 +174,7 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
   List<Polyline> _buildPolylines() {
     final polylines = <Polyline>[];
 
-    // Primero las rutas no seleccionadas (más tenues)
+    // ── Rutas no seleccionadas (tenues, sin borde) ──────────────────────────
     for (int i = 0; i < widget.routes.length; i++) {
       if (i == widget.selectedIndex) continue;
 
@@ -182,22 +183,25 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
             .where((p) => p.length >= 2)
             .map((p) => LatLng(p[0], p[1]))
             .toList();
+        if (points.isEmpty) continue;
 
-        if (points.isNotEmpty) {
-          // Usar color específico del modo de transporte
-          final modeColor = _getModeColor(segment.mode.value);
-          polylines.add(
-            Polyline(
-              points: points,
-              color: modeColor.withValues(alpha: 0.42),
-              strokeWidth: 4,
-            ),
-          );
-        }
+        final modeColor = _getModeColor(segment.mode.value);
+        final isWalk = segment.mode == TransportMode.walk;
+
+        polylines.add(
+          Polyline(
+            points: points,
+            color: modeColor.withValues(alpha: 0.35),
+            strokeWidth: isWalk ? 3 : 4,
+            pattern: isWalk
+                ? const StrokePattern.dotted(spacingFactor: 1.5)
+                : const StrokePattern.solid(),
+          ),
+        );
       }
     }
 
-    // Luego la ruta seleccionada (encima, más gruesa)
+    // ── Ruta seleccionada (encima, con borde blanco) ────────────────────────
     if (widget.selectedIndex < widget.routes.length) {
       final selectedRoute = widget.routes[widget.selectedIndex];
 
@@ -206,12 +210,23 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
             .where((p) => p.length >= 2)
             .map((p) => LatLng(p[0], p[1]))
             .toList();
+        if (points.isEmpty) continue;
 
-        if (points.isNotEmpty) {
-          // Usar color específico del modo de transporte
-          final modeColor = _getModeColor(segment.mode.value);
-          
-          // Borde blanco
+        final modeColor = _getModeColor(segment.mode.value);
+        final isWalk = segment.mode == TransportMode.walk;
+
+        if (isWalk) {
+          // Caminata: línea punteada gris oscuro sin borde (visualmente distinta)
+          polylines.add(
+            Polyline(
+              points: points,
+              color: modeColor.withValues(alpha: 0.9),
+              strokeWidth: 4,
+              pattern: const StrokePattern.dotted(spacingFactor: 1.8),
+            ),
+          );
+        } else {
+          // Transporte/auto: línea sólida con borde blanco
           polylines.add(
             Polyline(
               points: points,
@@ -219,9 +234,12 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
               strokeWidth: 10,
             ),
           );
-          // Línea de color del modo
           polylines.add(
-            Polyline(points: points, color: modeColor, strokeWidth: 6),
+            Polyline(
+              points: points,
+              color: modeColor,
+              strokeWidth: 6,
+            ),
           );
         }
       }
@@ -229,6 +247,7 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
 
     return polylines;
   }
+
 
   Marker _buildMarker(
     double lat,
