@@ -9,7 +9,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../config/app_config.dart';
 import '../models/route_request.dart';
+import '../models/route_loading_state.dart';
 import '../services/api_service.dart';
+import '../widgets/route_loading_overlay.dart';
 import 'results_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -186,6 +188,14 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: 0,
             child: _buildBottomPanel(bottomPadding),
           ),
+          
+          // Overlay de carga mientras se calculan rutas
+          if (_isLoading)
+            Positioned.fill(
+              child: RouteLoadingOverlay(
+                message: RouteLoadingState.calculating.message,
+              ),
+            ),
         ],
       ),
     );
@@ -640,11 +650,13 @@ class _HomeScreenState extends State<HomeScreen> {
   IconData _modeIcon(TransportMode mode) {
     return switch (mode) {
       TransportMode.walk => Icons.directions_walk_rounded,
+      TransportMode.bike => Icons.directions_bike_rounded,
+      TransportMode.lightRail => Icons.tram_rounded,
+      TransportMode.rtp => Icons.directions_bus_rounded,
       TransportMode.bus => Icons.directions_bus_rounded,
       TransportMode.metro => Icons.subway_rounded,
       TransportMode.metrobus => Icons.directions_bus_filled_rounded,
       TransportMode.trolleybus => Icons.ev_station_rounded,
-      TransportMode.bike => Icons.directions_bike_rounded,
       TransportMode.car => Icons.directions_car_rounded,
     };
   }

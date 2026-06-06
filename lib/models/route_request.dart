@@ -15,11 +15,14 @@ class Coordinate {
 
 enum TransportMode {
   walk('WALK', 'Caminar', '🚶'),
+  bike('BIKE', 'Bicicleta', '🚲'),
+  lightRail('LIGHT_RAIL', 'Tren Ligero', '🚊'),
+  rtp('RTP', 'RTP', '🚌'),
+  // Modos legacy (mantener para compatibilidad)
   bus('BUS', 'Camión', '🚌'),
   metro('METRO', 'Metro', '🚇'),
   metrobus('METROBUS', 'Metrobús', '🚍'),
   trolleybus('TROLLEYBUS', 'Trolebús', '🚎'),
-  bike('BIKE', 'Bicicleta', '🚲'),
   car('CAR', 'Auto', '🚗');
 
   const TransportMode(this.value, this.label, this.icon);

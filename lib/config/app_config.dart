@@ -5,11 +5,11 @@ class AppConfig {
   /// o http://localhost:8000 (web/iOS simulator)
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000',
+    defaultValue: 'http://192.168.1.69:8000',
   );
 
   /// Timeout para requests HTTP en segundos.
-  static const int httpTimeoutSeconds = 30;
+  static const int httpTimeoutSeconds = 60;
 
   /// Zona de demo: Tlalpan, alrededor de Tec de Monterrey Campus Ciudad de Mexico.
   static const double demoOriginLat = 19.2944;

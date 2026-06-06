@@ -23,20 +23,30 @@ class RouteInputForm extends StatefulWidget {
 }
 
 class _RouteInputFormState extends State<RouteInputForm> {
-  // Coordenadas default: Bellas Artes a Ángel de la Independencia
-  LatLng _origin = const LatLng(19.4352, -99.1412);
-  LatLng _destination = const LatLng(19.4270, -99.1676);
+  LatLng? _origin;
+  LatLng? _destination;
 
   DateTime _departureTime = DateTime.now();
   TravelPriority _priority = TravelPriority.balanced;
 
   final Set<TransportMode> _selectedModes = {
     TransportMode.walk,
-    TransportMode.metro,
-    TransportMode.metrobus,
+    TransportMode.lightRail,
   };
 
   void _submit() {
+    if (_origin == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un punto de origen en el mapa')),
+      );
+      return;
+    }
+    if (_destination == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un punto de destino en el mapa')),
+      );
+      return;
+    }
     if (_selectedModes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -48,10 +58,10 @@ class _RouteInputFormState extends State<RouteInputForm> {
 
     widget.onSubmit(
       RouteRequest(
-        origin: Coordinate(lat: _origin.latitude, lon: _origin.longitude),
+        origin: Coordinate(lat: _origin!.latitude, lon: _origin!.longitude),
         destination: Coordinate(
-          lat: _destination.latitude,
-          lon: _destination.longitude,
+          lat: _destination!.latitude,
+          lon: _destination!.longitude,
         ),
         departureTime: _departureTime,
         transportModes: _selectedModes.toList(),
@@ -64,11 +74,14 @@ class _RouteInputFormState extends State<RouteInputForm> {
     final initialLoc = isOrigin ? _origin : _destination;
     final title = isOrigin ? 'Selecciona Origen' : 'Selecciona Destino';
 
+    // Si no hay ubicación previa, centrar en CDMX
+    final effectiveInitial = initialLoc ?? const LatLng(19.4326, -99.1332);
+
     final LatLng? pickedLocation = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) =>
-            LocationPickerScreen(initialLocation: initialLoc, title: title),
+            LocationPickerScreen(initialLocation: effectiveInitial, title: title),
       ),
     );
 
@@ -97,6 +110,7 @@ class _RouteInputFormState extends State<RouteInputForm> {
             icon: Icons.my_location_rounded,
             color: const Color(0xFF6C63FF),
             location: _origin,
+            placeholder: 'Toca para seleccionar origen',
             onTap: () => _pickLocation(true),
           ),
 
@@ -108,6 +122,7 @@ class _RouteInputFormState extends State<RouteInputForm> {
             icon: Icons.flag_rounded,
             color: const Color(0xFFFF6B6B),
             location: _destination,
+            placeholder: 'Toca para seleccionar destino',
             onTap: () => _pickLocation(false),
           ),
 
@@ -359,36 +374,57 @@ class _RouteInputFormState extends State<RouteInputForm> {
   Widget _buildLocationSelector({
     required IconData icon,
     required Color color,
-    required LatLng location,
+    required LatLng? location,
+    required String placeholder,
     required VoidCallback onTap,
   }) {
+    final hasLocation = location != null;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A2E),
+            color: hasLocation
+                ? const Color(0xFF1A1A2E)
+                : color.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(
+              color: hasLocation
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : color.withValues(alpha: 0.3),
+              width: hasLocation ? 1 : 1.5,
+            ),
           ),
           child: Row(
             children: [
-              Icon(icon, color: color, size: 20),
+              Icon(
+                hasLocation ? icon : Icons.add_location_alt_rounded,
+                color: hasLocation ? color : color.withValues(alpha: 0.7),
+                size: 20,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}',
+                  hasLocation
+                      ? '${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}'
+                      : placeholder,
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
+                    color: hasLocation ? Colors.white : Colors.white38,
+                    fontWeight: hasLocation ? FontWeight.w500 : FontWeight.w400,
+                    fontStyle: hasLocation ? FontStyle.normal : FontStyle.italic,
                   ),
                 ),
               ),
-              const Icon(Icons.map_rounded, color: Colors.white38, size: 20),
+              Icon(
+                Icons.map_rounded,
+                color: hasLocation ? Colors.white38 : color.withValues(alpha: 0.5),
+                size: 20,
+              ),
             ],
           ),
         ),

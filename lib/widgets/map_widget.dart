@@ -32,11 +32,29 @@ class ConcienciaMapWidget extends StatefulWidget {
 class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
   late final MapController _mapController;
 
-  static const _routeColors = [
-    Color(0xFF1A73E8),
-    Color(0xFFF9AB00),
-    Color(0xFFEA4335),
-  ];
+  // Colores específicos por modo de transporte
+  static Color _getModeColor(String mode) {
+    switch (mode) {
+      case 'WALK':
+        return const Color(0xFF5F6368); // Gris
+      case 'BIKE':
+        return const Color(0xFF34A853); // Verde
+      case 'LIGHT_RAIL':
+        return const Color(0xFFFF6D00); // Naranja (Tren Ligero)
+      case 'RTP':
+        return const Color(0xFF00897B); // Verde azulado (RTP)
+      case 'METRO':
+        return const Color(0xFFFF1744); // Rojo (Metro)
+      case 'METROBUS':
+        return const Color(0xFFD81B60); // Rosa (Metrobús)
+      case 'BUS':
+        return const Color(0xFF1976D2); // Azul (Bus)
+      case 'CAR':
+        return const Color(0xFF424242); // Gris oscuro
+      default:
+        return const Color(0xFF1A73E8); // Azul por defecto
+    }
+  }
 
   @override
   void initState() {
@@ -159,7 +177,6 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
     for (int i = 0; i < widget.routes.length; i++) {
       if (i == widget.selectedIndex) continue;
 
-      final color = _routeColors[i % _routeColors.length];
       for (final segment in widget.routes[i].segments) {
         final points = segment.polyline
             .where((p) => p.length >= 2)
@@ -167,10 +184,12 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
             .toList();
 
         if (points.isNotEmpty) {
+          // Usar color específico del modo de transporte
+          final modeColor = _getModeColor(segment.mode.value);
           polylines.add(
             Polyline(
               points: points,
-              color: color.withValues(alpha: 0.42),
+              color: modeColor.withValues(alpha: 0.42),
               strokeWidth: 4,
             ),
           );
@@ -181,8 +200,6 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
     // Luego la ruta seleccionada (encima, más gruesa)
     if (widget.selectedIndex < widget.routes.length) {
       final selectedRoute = widget.routes[widget.selectedIndex];
-      final selectedColor =
-          _routeColors[widget.selectedIndex % _routeColors.length];
 
       for (final segment in selectedRoute.segments) {
         final points = segment.polyline
@@ -191,7 +208,10 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
             .toList();
 
         if (points.isNotEmpty) {
-          // Borde oscuro
+          // Usar color específico del modo de transporte
+          final modeColor = _getModeColor(segment.mode.value);
+          
+          // Borde blanco
           polylines.add(
             Polyline(
               points: points,
@@ -199,8 +219,9 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
               strokeWidth: 10,
             ),
           );
+          // Línea de color del modo
           polylines.add(
-            Polyline(points: points, color: selectedColor, strokeWidth: 6),
+            Polyline(points: points, color: modeColor, strokeWidth: 6),
           );
         }
       }

@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/route_request.dart';
 import '../models/route_response.dart';
+import '../models/route_loading_state.dart';
 import '../widgets/map_widget.dart';
 import '../widgets/route_card.dart';
+import '../widgets/route_loading_overlay.dart';
 
 class ResultsScreen extends StatefulWidget {
   final RouteResponse response;
@@ -22,8 +24,64 @@ class ResultsScreen extends StatefulWidget {
   State<ResultsScreen> createState() => _ResultsScreenState();
 }
 
-class _ResultsScreenState extends State<ResultsScreen> {
+class _ResultsScreenState extends State<ResultsScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedRouteIndex = 0;
+  RouteLoadingState _loadingState = RouteLoadingState.rendering;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Configurar animaciones
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    // Simular proceso de renderizado
+    _startRenderingAnimation();
+  }
+
+  void _startRenderingAnimation() async {
+    // Esperar un momento para que el usuario vea el estado de renderizado
+    await Future.delayed(const Duration(milliseconds: 400));
+    
+    if (mounted) {
+      setState(() {
+        _loadingState = RouteLoadingState.complete;
+      });
+      
+      // Iniciar animaciones de entrada
+      _animationController.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,13 +92,16 @@ class _ResultsScreenState extends State<ResultsScreen> {
         children: [
           // --- Mapa (fondo completo) ---
           Positioned.fill(
-            child: ConcienciaMapWidget(
-              routes: routes,
-              selectedIndex: _selectedRouteIndex,
-              originLat: widget.request.origin.lat,
-              originLon: widget.request.origin.lon,
-              destLat: widget.request.destination.lat,
-              destLon: widget.request.destination.lon,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: ConcienciaMapWidget(
+                routes: routes,
+                selectedIndex: _selectedRouteIndex,
+                originLat: widget.request.origin.lat,
+                originLon: widget.request.origin.lon,
+                destLat: widget.request.destination.lat,
+                destLon: widget.request.destination.lon,
+              ),
             ),
           ),
 
@@ -48,14 +109,20 @@ class _ResultsScreenState extends State<ResultsScreen> {
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 16,
-            child: _buildBackButton(context),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: _buildBackButton(context),
+            ),
           ),
 
           // --- Tiempo de cómputo ---
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             right: 16,
-            child: _buildComputeTimeBadge(),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: _buildComputeTimeBadge(),
+            ),
           ),
 
           // --- Panel inferior con rutas ---
@@ -63,8 +130,22 @@ class _ResultsScreenState extends State<ResultsScreen> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: _buildRoutesPanel(routes),
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: _buildRoutesPanel(routes),
+              ),
+            ),
           ),
+
+          // --- Overlay de carga ---
+          if (_loadingState.showOverlay)
+            Positioned.fill(
+              child: RouteLoadingOverlay(
+                message: _loadingState.message,
+              ),
+            ),
         ],
       ),
     );
