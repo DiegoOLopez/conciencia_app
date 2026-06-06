@@ -52,7 +52,7 @@ class RouteRequest {
   final List<TransportMode> transportModes;
   final TravelPriority priority;
 
-  const RouteRequest({
+  RouteRequest({
     required this.origin,
     required this.destination,
     required this.departureTime,

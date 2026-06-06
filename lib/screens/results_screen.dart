@@ -319,7 +319,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                   ],
                   // Lista horizontal de tarjetas
                   SizedBox(
-                    height: 250,
+                    height: 320,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -164,7 +164,7 @@ class RouteCard extends StatelessWidget {
                 color: const Color(0xFF3C4043),
                 height: 1.4,
               ),
-              maxLines: 3,
+              maxLines: 8,
               overflow: TextOverflow.ellipsis,
             ),
           ),

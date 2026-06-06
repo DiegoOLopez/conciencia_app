@@ -1,12 +1,14 @@
 // ConciencIA — Widget de mapa con flutter_map.
 // Muestra rutas con polylines de colores sobre tiles claros tipo navegacion.
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../config/app_config.dart';
 import '../models/route_request.dart';
 import '../models/route_response.dart';
+import '../services/api_service.dart';
 
 class ConcienciaMapWidget extends StatefulWidget {
   final List<RouteOption> routes;
@@ -34,6 +36,10 @@ class ConcienciaMapWidget extends StatefulWidget {
 
 class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
   late final MapController _mapController;
+  bool _showHeatmap = false;
+  List<List<double>> _heatmapPoints = [];
+  Timer? _debounceTimer;
+  final ApiService _apiService = ApiService();
 
   // Colores específicos por modo de transporte
   static Color _getModeColor(String mode) {
@@ -111,26 +117,78 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
   }
 
   @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchHeatmap() async {
+    final bounds = _mapController.camera.visibleBounds;
+    try {
+      final points = await _apiService.getHeatmap(
+        bounds.southWest.latitude,
+        bounds.southWest.longitude,
+        bounds.northEast.latitude,
+        bounds.northEast.longitude,
+      );
+      if (mounted && _showHeatmap) {
+        setState(() {
+          _heatmapPoints = points;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching heatmap: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: LatLng(
-          (widget.originLat + widget.destLat) / 2,
-          (widget.originLon + widget.destLon) / 2,
-        ),
-        initialZoom: AppConfig.defaultZoom,
-        onMapReady: _fitSelectedRoute,
-      ),
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: AppConfig.osmTileUrl,
-          userAgentPackageName: 'com.conciencia.app',
-          subdomains: const ['a', 'b', 'c', 'd'],
-          retinaMode: RetinaMode.isHighDensity(context),
-          maxNativeZoom: 20,
-          errorTileCallback: (tile, error, stackTrace) {},
-        ),
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: LatLng(
+              (widget.originLat + widget.destLat) / 2,
+              (widget.originLon + widget.destLon) / 2,
+            ),
+            initialZoom: AppConfig.defaultZoom,
+            onMapReady: () {
+              _fitSelectedRoute();
+              if (_showHeatmap) _fetchHeatmap();
+            },
+            onPositionChanged: (position, hasGesture) {
+              if (_showHeatmap && hasGesture) {
+                _debounceTimer?.cancel();
+                _debounceTimer = Timer(const Duration(milliseconds: 600), () {
+                  _fetchHeatmap();
+                });
+              }
+            },
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: AppConfig.osmTileUrl,
+              userAgentPackageName: 'com.conciencia.app',
+              subdomains: const ['a', 'b', 'c', 'd'],
+              retinaMode: RetinaMode.isHighDensity(context),
+              maxNativeZoom: 20,
+              errorTileCallback: (tile, error, stackTrace) {},
+            ),
+
+            if (_showHeatmap && _heatmapPoints.isNotEmpty)
+              CircleLayer(
+                circles: _heatmapPoints.map((point) {
+                  return CircleMarker(
+                    point: LatLng(point[0], point[1]),
+                    radius: 20, // 20 pixeles de radio independientemente del zoom
+                    useRadiusInMeter: false,
+                    color: Colors.red.withValues(alpha: 0.35),
+                    borderColor: Colors.transparent,
+                    borderStrokeWidth: 0,
+                  );
+                }).toList(),
+              ),
 
         CircleLayer(
           circles: [
@@ -172,7 +230,74 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
           ],
         ),
       ],
-    );
+    ),
+    Positioned(
+      top: 60,
+      right: 16,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            mini: true,
+            backgroundColor: _showHeatmap ? Colors.red : Colors.white,
+            elevation: 4,
+            child: Icon(
+              Icons.local_fire_department,
+              color: _showHeatmap ? Colors.white : Colors.red,
+            ),
+            onPressed: () {
+              setState(() {
+                _showHeatmap = !_showHeatmap;
+              });
+              if (_showHeatmap) {
+                _fetchHeatmap();
+              } else {
+                setState(() => _heatmapPoints.clear());
+              }
+            },
+          ),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.add, color: Color(0xFF5F6368)),
+                  onPressed: () {
+                    final zoom = _mapController.camera.zoom;
+                    _mapController.move(_mapController.camera.center, zoom + 1);
+                  },
+                ),
+                Container(
+                  height: 1,
+                  width: 32,
+                  color: const Color(0xFFDADCE0),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.remove, color: Color(0xFF5F6368)),
+                  onPressed: () {
+                    final zoom = _mapController.camera.zoom;
+                    _mapController.move(_mapController.camera.center, zoom - 1);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+);
   }
 
   Marker _buildTransitMarker(ParadaTransporte parada) {

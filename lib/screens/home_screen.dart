@@ -27,6 +27,7 @@ enum _PointSelection { origin, destination }
 class _HomeScreenState extends State<HomeScreen> {
   final _mapController = MapController();
   bool _isLoading = false;
+  bool _showPreferences = false;
 
   LatLng _origin = const LatLng(
     AppConfig.demoOriginLat,
@@ -36,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     AppConfig.demoDestinationLat,
     AppConfig.demoDestinationLon,
   );
-  _PointSelection _activeSelection = _PointSelection.destination;
+  _PointSelection _activeSelection = _PointSelection.origin;
   DateTime _departureTime = DateTime.now();
   TravelPriority _priority = TravelPriority.balanced;
   final Set<TransportMode> _selectedModes = {
@@ -170,15 +171,46 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               children: [
                 _buildFloatingButton(
-                  icon: Icons.school_rounded,
-                  tooltip: 'Tec CCM',
-                  onTap: _moveToDemoDestination,
-                ),
-                const SizedBox(height: 10),
-                _buildFloatingButton(
                   icon: Icons.my_location_rounded,
-                  tooltip: 'Centrar Tlalpan',
+                  tooltip: 'Mi Ubicación',
                   onTap: _centerDemoArea,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.add, color: Color(0xFF5F6368)),
+                        onPressed: () {
+                          final zoom = _mapController.camera.zoom;
+                          _mapController.move(_mapController.camera.center, zoom + 1);
+                        },
+                      ),
+                      Container(
+                        height: 1,
+                        width: 32,
+                        color: const Color(0xFFDADCE0),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.remove, color: Color(0xFF5F6368)),
+                        onPressed: () {
+                          final zoom = _mapController.camera.zoom;
+                          _mapController.move(_mapController.camera.center, zoom - 1);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -458,23 +490,51 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showPreferences = !_showPreferences;
+                    });
+                  },
+                  behavior: HitTestBehavior.opaque,
                   child: Container(
-                    width: 48,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDADCE0).withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(2.5),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 48,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDADCE0).withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(2.5),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _showPreferences ? 'Ocultar opciones' : 'Mostrar opciones de ruta',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: const Color(0xFF5F6368),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                _buildTimeRow(),
-                const SizedBox(height: 16),
-                _buildPriorityControl(),
-                const SizedBox(height: 16),
-                _buildModeChips(),
-                const SizedBox(height: 24),
+                if (_showPreferences) ...[
+                  const SizedBox(height: 12),
+                  _buildTimeRow(),
+                  const SizedBox(height: 16),
+                  _buildPriorityControl(),
+                  const SizedBox(height: 16),
+                  _buildModeChips(),
+                  const SizedBox(height: 24),
+                ] else
+                  const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   height: 56,

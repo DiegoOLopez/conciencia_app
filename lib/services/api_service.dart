@@ -53,6 +53,31 @@ class ApiService {
     }
   }
 
+  /// Solicita los puntos de crímenes para el mapa de calor.
+  Future<List<List<double>>> getHeatmap(
+      double minLat, double minLon, double maxLat, double maxLon) async {
+    final url = Uri.parse(
+        '$baseUrl/api/v1/heatmap?min_lat=$minLat&min_lon=$minLon&max_lat=$maxLat&max_lon=$maxLon');
+
+    try {
+      final response = await _client
+          .get(url)
+          .timeout(Duration(seconds: AppConfig.httpTimeoutSeconds));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> json = jsonDecode(response.body);
+        return json.map((e) => [(e[0] as num).toDouble(), (e[1] as num).toDouble()]).toList();
+      } else {
+        throw ApiException(
+          'Error obteniendo heatmap (${response.statusCode})',
+          statusCode: response.statusCode,
+        );
+      }
+    } on http.ClientException {
+      throw ApiException('Sin conexión al servidor al obtener heatmap.');
+    }
+  }
+
   /// Verifica que el backend esté disponible.
   Future<bool> healthCheck() async {
     try {
