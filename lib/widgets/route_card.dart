@@ -59,19 +59,21 @@ class RouteCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutCubic,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isSelected ? color.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.85),
+              color: isSelected 
+                  ? Colors.white.withValues(alpha: 0.95) 
+                  : Colors.white.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected
-                    ? color.withValues(alpha: 0.5)
-                    : Colors.white.withValues(alpha: 0.6),
-                width: isSelected ? 2 : 1.5,
+                    ? color.withValues(alpha: 0.8)
+                    : Colors.white.withValues(alpha: 0.4),
+                width: isSelected ? 2.5 : 1.5,
               ),
             ),
             child: Column(
@@ -154,7 +156,7 @@ class RouteCard extends StatelessWidget {
           const SizedBox(height: 10),
 
           // ── Explicación ──────────────────────────────────────────────────
-          Expanded(
+          Flexible(
             child: Text(
               route.explanation,
               style: GoogleFonts.inter(
