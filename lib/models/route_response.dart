@@ -112,9 +112,36 @@ class RouteRecommendation {
   }
 }
 
+class ParadaTransporte {
+  final double lat;
+  final double lon;
+  final String nombre;
+  final String tipo;
+  final String color;
+
+  const ParadaTransporte({
+    required this.lat,
+    required this.lon,
+    required this.nombre,
+    required this.tipo,
+    required this.color,
+  });
+
+  factory ParadaTransporte.fromJson(Map<String, dynamic> json) {
+    return ParadaTransporte(
+      lat: (json['lat'] as num).toDouble(),
+      lon: (json['lon'] as num).toDouble(),
+      nombre: json['nombre'] as String,
+      tipo: json['tipo'] as String,
+      color: json['color'] as String,
+    );
+  }
+}
+
 class RouteResponse {
   final List<RouteOption> routes;
   final RouteRecommendation? recommendation;
+  final List<ParadaTransporte>? paradasTransporte;
   final String requestId;
   final DateTime computedAt;
   final double computationTimeMs;
@@ -122,6 +149,7 @@ class RouteResponse {
   const RouteResponse({
     required this.routes,
     this.recommendation,
+    this.paradasTransporte,
     required this.requestId,
     required this.computedAt,
     required this.computationTimeMs,
@@ -134,6 +162,11 @@ class RouteResponse {
           .toList(),
       recommendation: json['recomendacion'] != null 
           ? RouteRecommendation.fromJson(json['recomendacion'] as Map<String, dynamic>)
+          : null,
+      paradasTransporte: json['paradas_transporte'] != null
+          ? (json['paradas_transporte'] as List)
+              .map((p) => ParadaTransporte.fromJson(p as Map<String, dynamic>))
+              .toList()
           : null,
       requestId: json['request_id'] as String,
       computedAt: DateTime.parse(json['computed_at'] as String),

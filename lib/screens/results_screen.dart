@@ -97,6 +97,7 @@ class _ResultsScreenState extends State<ResultsScreen>
               opacity: _fadeAnimation,
               child: ConcienciaMapWidget(
                 routes: routes,
+                paradasTransporte: widget.response.paradasTransporte,
                 selectedIndex: _selectedRouteIndex,
                 originLat: widget.request.origin.lat,
                 originLon: widget.request.origin.lon,

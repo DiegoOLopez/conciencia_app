@@ -10,6 +10,7 @@ import '../models/route_response.dart';
 
 class ConcienciaMapWidget extends StatefulWidget {
   final List<RouteOption> routes;
+  final List<ParadaTransporte>? paradasTransporte;
   final int selectedIndex;
   final double originLat;
   final double originLon;
@@ -19,6 +20,7 @@ class ConcienciaMapWidget extends StatefulWidget {
   const ConcienciaMapWidget({
     super.key,
     required this.routes,
+    this.paradasTransporte,
     required this.selectedIndex,
     required this.originLat,
     required this.originLon,
@@ -150,6 +152,8 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
 
         MarkerLayer(
           markers: [
+            if (widget.paradasTransporte != null)
+              ...widget.paradasTransporte!.map((p) => _buildTransitMarker(p)),
             _buildMarker(
               widget.originLat,
               widget.originLon,
@@ -162,12 +166,38 @@ class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
               widget.destLon,
               Icons.flag_rounded,
               const Color(0xFFEA4335),
-              'Tec CCM',
+              'Destino',
             ),
             _buildAreaLabel(),
           ],
         ),
       ],
+    );
+  }
+
+  Marker _buildTransitMarker(ParadaTransporte parada) {
+    Color color = Color(int.parse(parada.color.replaceFirst('#', '0xFF')));
+    IconData icon = parada.tipo == 'RTP' ? Icons.directions_bus : Icons.tram;
+    return Marker(
+      point: LatLng(parada.lat, parada.lon),
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: Colors.white, size: 14),
+      ),
     );
   }
 
