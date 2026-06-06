@@ -33,8 +33,11 @@ enum TransportMode {
 
 enum TravelPriority {
   speed('SPEED', 'Rápido', '🚀'),
+  fastest('FASTEST', 'Muy Rápido', '⚡'),
   safety('SAFETY', 'Seguro', '🛡️'),
-  balanced('BALANCED', 'Equilibrado', '⚖️');
+  balanced('BALANCED', 'Equilibrado', '⚖️'),
+  shortest('SHORTEST', 'Más Corto', '📏'),
+  accessible('ACCESSIBLE', 'Accesible', '♿');
 
   const TravelPriority(this.value, this.label, this.icon);
   final String value;

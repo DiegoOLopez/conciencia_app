@@ -1,6 +1,7 @@
 // ConciencIA — Pantalla de resultados.
 // Muestra mapa con 3 rutas y tarjetas con scores/explicaciones.
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/route_request.dart';
@@ -213,87 +214,137 @@ class _ResultsScreenState extends State<ResultsScreen>
 
   Widget _buildRoutesPanel(List<RouteOption> routes) {
     return Container(
+      padding: const EdgeInsets.only(top: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0.0),
-            Colors.white.withValues(alpha: 0.88),
-            Colors.white,
-          ],
-          stops: const [0.0, 0.15, 0.3],
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 30,
+            offset: const Offset(0, -10),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Título de sección
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            color: Colors.white.withValues(alpha: 0.85),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Rutas encontradas',
-                    style: GoogleFonts.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF202124),
+                  // Título de sección
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Rutas encontradas',
+                          style: GoogleFonts.outfit(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF202124),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F0FE),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${routes.length}',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1A73E8),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F0FE),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${routes.length}',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1A73E8),
+                  const SizedBox(height: 12),
+                  if (widget.response.recommendation != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F0FE),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFD2E3FC)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.auto_awesome, color: Color(0xFF1A73E8), size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Recomendación de ConciencIA (Score: ${widget.response.recommendation!.score.toStringAsFixed(1)})',
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: const Color(0xFF1967D2),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    widget.response.recommendation!.razon,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: const Color(0xFF202124),
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                  ],
+                  // Lista horizontal de tarjetas
+                  SizedBox(
+                    height: 230,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: routes.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() => _selectedRouteIndex = index);
+                            },
+                            child: RouteCard(
+                              route: routes[index],
+                              isSelected: index == _selectedRouteIndex,
+                              color: _routeColors[index],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom + 12),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-
-            // Lista horizontal de tarjetas
-            SizedBox(
-              height: 230,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: routes.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedRouteIndex = index);
-                      },
-                      child: RouteCard(
-                        route: routes[index],
-                        isSelected: index == _selectedRouteIndex,
-                        color: _routeColors[index],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 12),
-          ],
+          ),
         ),
       ),
     );

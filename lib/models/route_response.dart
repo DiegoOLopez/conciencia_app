@@ -92,14 +92,36 @@ class RouteOption {
   }
 }
 
+class RouteRecommendation {
+  final String rutaId;
+  final double score;
+  final String razon;
+
+  const RouteRecommendation({
+    required this.rutaId,
+    required this.score,
+    required this.razon,
+  });
+
+  factory RouteRecommendation.fromJson(Map<String, dynamic> json) {
+    return RouteRecommendation(
+      rutaId: json['ruta_id'] as String,
+      score: (json['score'] as num).toDouble(),
+      razon: json['razon'] as String,
+    );
+  }
+}
+
 class RouteResponse {
   final List<RouteOption> routes;
+  final RouteRecommendation? recommendation;
   final String requestId;
   final DateTime computedAt;
   final double computationTimeMs;
 
   const RouteResponse({
     required this.routes,
+    this.recommendation,
     required this.requestId,
     required this.computedAt,
     required this.computationTimeMs,
@@ -110,6 +132,9 @@ class RouteResponse {
       routes: (json['routes'] as List)
           .map((r) => RouteOption.fromJson(r as Map<String, dynamic>))
           .toList(),
+      recommendation: json['recomendacion'] != null 
+          ? RouteRecommendation.fromJson(json['recomendacion'] as Map<String, dynamic>)
+          : null,
       requestId: json['request_id'] as String,
       computedAt: DateTime.parse(json['computed_at'] as String),
       computationTimeMs: (json['computation_time_ms'] as num).toDouble(),

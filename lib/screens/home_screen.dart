@@ -1,6 +1,7 @@
 // ConciencIA — Pantalla principal tipo Maps.
 // Permite elegir destino tocando el mapa y buscar rutas.
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -233,20 +234,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        PolylineLayer(
-          polylines: [
-            Polyline(
-              points: [_origin, _destination],
-              color: Colors.white.withValues(alpha: 0.95),
-              strokeWidth: 8,
-            ),
-            Polyline(
-              points: [_origin, _destination],
-              color: const Color(0xFF1A73E8),
-              strokeWidth: 4,
-            ),
-          ],
-        ),
         MarkerLayer(
           markers: [
             _buildMapMarker(
@@ -268,81 +255,93 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSearchBar() {
-    return Material(
-      color: Colors.white,
-      elevation: 6,
-      shadowColor: Colors.black.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                const SizedBox(height: 15),
-                _buildRouteDot(const Color(0xFF188038), hollow: true),
-                Container(
-                  width: 2,
-                  height: 28,
-                  color: const Color(0xFFDADCE0),
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                ),
-                _buildRouteDot(const Color(0xFFD93025)),
-              ],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.85),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
+              borderRadius: BorderRadius.circular(24),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLocationField(
-                    label: 'Origen',
-                    value: _formatPoint(_origin),
-                    selection: _PointSelection.origin,
-                  ),
-                  const Divider(height: 14, color: Color(0xFFE8EAED)),
-                  _buildLocationField(
-                    label: 'Destino',
-                    value: _formatPoint(_destination),
-                    selection: _PointSelection.destination,
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      _activeSelection == _PointSelection.origin
-                          ? 'Toca el mapa para seleccionar origen'
-                          : 'Toca el mapa para seleccionar destino',
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFF1A73E8),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                  Column(
+                    children: [
+                      const SizedBox(height: 18),
+                      _buildRouteDot(const Color(0xFF188038), hollow: true),
+                      Container(
+                        width: 2,
+                        height: 32,
+                        color: const Color(0xFFDADCE0),
+                        margin: const EdgeInsets.symmetric(vertical: 4),
                       ),
+                      _buildRouteDot(const Color(0xFFD93025)),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildLocationField(
+                          label: 'Origen',
+                          value: _formatPoint(_origin),
+                          selection: _PointSelection.origin,
+                        ),
+                        const Divider(height: 16, color: Color(0x66E8EAED)),
+                        _buildLocationField(
+                          label: 'Destino',
+                          value: _formatPoint(_destination),
+                          selection: _PointSelection.destination,
+                        ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(50),
+                          onTap: _swapRoutePoints,
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Icon(Icons.swap_vert_rounded, color: Color(0xFF5F6368)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'C·IA',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFF1A73E8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 6),
-            Column(
-              children: [
-                IconButton(
-                  tooltip: 'Intercambiar origen y destino',
-                  onPressed: _swapRoutePoints,
-                  icon: const Icon(Icons.swap_vert_rounded),
-                  color: const Color(0xFF5F6368),
-                ),
-                Text(
-                  'ConciencIA',
-                  style: GoogleFonts.outfit(
-                    color: const Color(0xFF1A73E8),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -367,59 +366,63 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     final selected = _activeSelection == selection;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: () => setState(() => _activeSelection = selection),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFE8F0FE) : const Color(0xFFF8FAFD),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected ? const Color(0xFF1A73E8) : const Color(0xFFE8EAED),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => setState(() => _activeSelection = selection),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFF1A73E8).withValues(alpha: 0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? const Color(0xFF1A73E8).withValues(alpha: 0.3) : Colors.transparent,
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: GoogleFonts.inter(
-                      color: selected
-                          ? const Color(0xFF1A73E8)
-                          : const Color(0xFF5F6368),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: GoogleFonts.inter(
+                        color: selected
+                            ? const Color(0xFF1A73E8)
+                            : const Color(0xFF5F6368),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF202124),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF202124),
+                        fontSize: 15,
+                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(
-              selected
-                  ? Icons.touch_app_rounded
-                  : Icons.edit_location_alt_outlined,
-              color: selected
-                  ? const Color(0xFF1A73E8)
-                  : const Color(0xFF5F6368),
-              size: 18,
-            ),
-          ],
+              Icon(
+                selected
+                    ? Icons.touch_app_rounded
+                    : Icons.edit_location_alt_outlined,
+                color: selected
+                    ? const Color(0xFF1A73E8)
+                    : const Color(0xFF5F6368).withValues(alpha: 0.5),
+                size: 20,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -431,59 +434,81 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomPanel(double bottomPadding) {
-    return Material(
-      color: Colors.white,
-      elevation: 12,
-      shadowColor: Colors.black.withValues(alpha: 0.24),
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 14, 16, bottomPadding + 14),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDADCE0),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 30,
+            offset: const Offset(0, -10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.85),
+              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.8))),
             ),
-            const SizedBox(height: 12),
-            _buildTimeRow(),
-            const SizedBox(height: 10),
-            _buildPriorityControl(),
-            const SizedBox(height: 12),
-            _buildModeChips(),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : _onSearchRoutes,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.directions_rounded),
-                label: Text(
-                  _isLoading ? 'Buscando rutas' : 'Buscar rutas seguras',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
+            padding: EdgeInsets.fromLTRB(20, 14, 20, bottomPadding + 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDADCE0).withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(2.5),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 20),
+                _buildTimeRow(),
+                const SizedBox(height: 16),
+                _buildPriorityControl(),
+                const SizedBox(height: 16),
+                _buildModeChips(),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _onSearchRoutes,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A73E8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 0,
+                    ),
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.directions_rounded, size: 24),
+                    label: Text(
+                      _isLoading ? 'Buscando rutas...' : 'Buscar rutas',
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -517,48 +542,74 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPriorityControl() {
-    return SegmentedButton<TravelPriority>(
-      segments: TravelPriority.values.map((priority) {
-        return ButtonSegment<TravelPriority>(
-          value: priority,
-          icon: Icon(_priorityIcon(priority), size: 17),
-          label: Text(priority.label),
-        );
-      }).toList(),
-      selected: {_priority},
-      showSelectedIcon: false,
-      onSelectionChanged: (selection) {
-        setState(() => _priority = selection.first);
-      },
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: TravelPriority.values.map((priority) {
+          final isSelected = _priority == priority;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ChoiceChip(
+              label: Text(priority.label),
+              avatar: Icon(
+                _priorityIcon(priority),
+                size: 16,
+                color: isSelected ? const Color(0xFF1A73E8) : const Color(0xFF5F6368),
+              ),
+              selected: isSelected,
+              showCheckmark: false,
+              selectedColor: const Color(0xFFE8F0FE),
+              backgroundColor: Colors.white,
+              side: BorderSide(
+                color: isSelected ? const Color(0xFF1A73E8).withValues(alpha: 0.5) : const Color(0xFFDADCE0),
+              ),
+              labelStyle: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? const Color(0xFF1A73E8) : const Color(0xFF3C4043),
+              ),
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _priority = priority);
+                }
+              },
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
   Widget _buildModeChips() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: TransportMode.values.map((mode) {
-        final selected = _selectedModes.contains(mode);
-        return FilterChip(
-          selected: selected,
-          showCheckmark: false,
-          avatar: Icon(
-            _modeIcon(mode),
-            size: 17,
-            color: selected ? const Color(0xFF1A73E8) : const Color(0xFF5F6368),
-          ),
-          label: Text(mode.label),
-          onSelected: (value) {
-            setState(() {
-              if (value) {
-                _selectedModes.add(mode);
-              } else {
-                _selectedModes.remove(mode);
-              }
-            });
-          },
-        );
-      }).toList(),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: TransportMode.values.map((mode) {
+          final selected = _selectedModes.contains(mode);
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: FilterChip(
+              selected: selected,
+              showCheckmark: false,
+              avatar: Icon(
+                _modeIcon(mode),
+                size: 17,
+                color: selected ? const Color(0xFF1A73E8) : const Color(0xFF5F6368),
+              ),
+              label: Text(mode.label),
+              onSelected: (value) {
+                setState(() {
+                  if (value) {
+                    _selectedModes.add(mode);
+                  } else {
+                    _selectedModes.remove(mode);
+                  }
+                });
+              },
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -569,18 +620,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     return Tooltip(
       message: tooltip,
-      child: Material(
-        color: Colors.white,
-        elevation: 5,
-        shadowColor: Colors.black.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            width: 46,
-            height: 46,
-            child: Icon(icon, color: const Color(0xFF1A73E8), size: 22),
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Material(
+              color: Colors.white.withValues(alpha: 0.85),
+              child: InkWell(
+                onTap: onTap,
+                child: SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: Icon(icon, color: const Color(0xFF1A73E8), size: 24),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -641,9 +705,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   IconData _priorityIcon(TravelPriority priority) {
     return switch (priority) {
-      TravelPriority.speed => Icons.speed_rounded,
-      TravelPriority.safety => Icons.shield_outlined,
-      TravelPriority.balanced => Icons.tune_rounded,
+      TravelPriority.speed => Icons.flash_on_rounded,
+      TravelPriority.fastest => Icons.bolt_rounded,
+      TravelPriority.safety => Icons.shield_rounded,
+      TravelPriority.balanced => Icons.balance_rounded,
+      TravelPriority.shortest => Icons.straighten_rounded,
+      TravelPriority.accessible => Icons.accessible_forward_rounded,
     };
   }
 

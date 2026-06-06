@@ -5,7 +5,7 @@ class AppConfig {
   /// o http://localhost:8000 (web/iOS simulator)
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.69:8000',
+    defaultValue: 'http://127.0.0.1:8000',
   );
 
   /// Timeout para requests HTTP en segundos.

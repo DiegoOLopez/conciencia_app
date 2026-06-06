@@ -1,6 +1,7 @@
 // ConciencIA — Tarjeta de ruta.
 // Muestra score, tiempo, riesgo y desglose de segmentos por modo.
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/route_request.dart';
@@ -44,31 +45,38 @@ class RouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
+    return Container(
       width: 300,
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isSelected
-              ? color.withValues(alpha: 0.72)
-              : const Color(0xFFDADCE0),
-          width: isSelected ? 1.5 : 1,
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isSelected ? 0.18 : 0.1),
-            blurRadius: isSelected ? 18 : 10,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: isSelected ? 0.12 : 0.05),
+            blurRadius: isSelected ? 24 : 12,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isSelected ? color.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? color.withValues(alpha: 0.5)
+                    : Colors.white.withValues(alpha: 0.6),
+                width: isSelected ? 2 : 1.5,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
           // ── Header: Rank + Tiempo + Íconos ──────────────────────────────
           Row(
             children: [
@@ -188,6 +196,9 @@ class RouteCard extends StatelessWidget {
               }).toList(),
             ),
         ],
+      ),
+          ),
+        ),
       ),
     );
   }
