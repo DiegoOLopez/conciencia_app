@@ -1,0 +1,41 @@
+name: conciencia
+description: "ConciencIA — Movilidad urbana segura para CDMX"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Mapa OpenStreetMap (sin API key)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # HTTP client
+  http: ^1.2.0
+
+  # State management
+  provider: ^6.1.0
+
+  # Ubicación del usuario
+  geolocator: ^13.0.2
+
+  # Fuente premium
+  google_fonts: ^6.2.1
+
+  # Utilidades
+  intl: ^0.20.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

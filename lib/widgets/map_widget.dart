@@ -1,0 +1,317 @@
+// ConciencIA — Widget de mapa con flutter_map.
+// Muestra rutas con polylines de colores sobre tiles claros tipo navegacion.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import '../config/app_config.dart';
+import '../models/route_response.dart';
+
+class ConcienciaMapWidget extends StatefulWidget {
+  final List<RouteOption> routes;
+  final int selectedIndex;
+  final double originLat;
+  final double originLon;
+  final double destLat;
+  final double destLon;
+
+  const ConcienciaMapWidget({
+    super.key,
+    required this.routes,
+    required this.selectedIndex,
+    required this.originLat,
+    required this.originLon,
+    required this.destLat,
+    required this.destLon,
+  });
+
+  @override
+  State<ConcienciaMapWidget> createState() => _ConcienciaMapWidgetState();
+}
+
+class _ConcienciaMapWidgetState extends State<ConcienciaMapWidget> {
+  late final MapController _mapController;
+
+  static const _routeColors = [
+    Color(0xFF1A73E8),
+    Color(0xFFF9AB00),
+    Color(0xFFEA4335),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void didUpdateWidget(ConcienciaMapWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedIndex != widget.selectedIndex) {
+      _fitSelectedRoute();
+    }
+  }
+
+  void _fitSelectedRoute() {
+    if (widget.routes.isEmpty ||
+        widget.selectedIndex < 0 ||
+        widget.selectedIndex >= widget.routes.length) {
+      _mapController.move(
+        const LatLng(AppConfig.defaultLat, AppConfig.defaultLon),
+        AppConfig.defaultZoom,
+      );
+      return;
+    }
+
+    final route = widget.routes[widget.selectedIndex];
+    final allPoints = <LatLng>[
+      LatLng(widget.originLat, widget.originLon),
+      LatLng(widget.destLat, widget.destLon),
+    ];
+
+    for (final segment in route.segments) {
+      for (final point in segment.polyline) {
+        if (point.length >= 2) {
+          allPoints.add(LatLng(point[0], point[1]));
+        }
+      }
+    }
+
+    if (allPoints.isNotEmpty) {
+      final bounds = LatLngBounds.fromPoints(allPoints);
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.fromLTRB(60, 100, 60, 300),
+          maxZoom: 16.2,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: LatLng(
+          (widget.originLat + widget.destLat) / 2,
+          (widget.originLon + widget.destLon) / 2,
+        ),
+        initialZoom: AppConfig.defaultZoom,
+        onMapReady: _fitSelectedRoute,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: AppConfig.osmTileUrl,
+          userAgentPackageName: 'com.conciencia.app',
+          subdomains: const ['a', 'b', 'c', 'd'],
+          retinaMode: RetinaMode.isHighDensity(context),
+          maxNativeZoom: 20,
+          errorTileCallback: (tile, error, stackTrace) {},
+        ),
+
+        CircleLayer(
+          circles: [
+            CircleMarker(
+              point: const LatLng(
+                AppConfig.demoDestinationLat,
+                AppConfig.demoDestinationLon,
+              ),
+              radius: 1150,
+              useRadiusInMeter: true,
+              color: const Color(0xFF1A73E8).withValues(alpha: 0.08),
+              borderColor: const Color(0xFF1A73E8).withValues(alpha: 0.28),
+              borderStrokeWidth: 2,
+            ),
+          ],
+        ),
+
+        PolylineLayer(polylines: _buildPolylines()),
+
+        MarkerLayer(
+          markers: [
+            _buildMarker(
+              widget.originLat,
+              widget.originLon,
+              Icons.my_location_rounded,
+              const Color(0xFF1A73E8),
+              'Origen',
+            ),
+            _buildMarker(
+              widget.destLat,
+              widget.destLon,
+              Icons.flag_rounded,
+              const Color(0xFFEA4335),
+              'Tec CCM',
+            ),
+            _buildAreaLabel(),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<Polyline> _buildPolylines() {
+    final polylines = <Polyline>[];
+
+    // Primero las rutas no seleccionadas (más tenues)
+    for (int i = 0; i < widget.routes.length; i++) {
+      if (i == widget.selectedIndex) continue;
+
+      final color = _routeColors[i % _routeColors.length];
+      for (final segment in widget.routes[i].segments) {
+        final points = segment.polyline
+            .where((p) => p.length >= 2)
+            .map((p) => LatLng(p[0], p[1]))
+            .toList();
+
+        if (points.isNotEmpty) {
+          polylines.add(
+            Polyline(
+              points: points,
+              color: color.withValues(alpha: 0.42),
+              strokeWidth: 4,
+            ),
+          );
+        }
+      }
+    }
+
+    // Luego la ruta seleccionada (encima, más gruesa)
+    if (widget.selectedIndex < widget.routes.length) {
+      final selectedRoute = widget.routes[widget.selectedIndex];
+      final selectedColor =
+          _routeColors[widget.selectedIndex % _routeColors.length];
+
+      for (final segment in selectedRoute.segments) {
+        final points = segment.polyline
+            .where((p) => p.length >= 2)
+            .map((p) => LatLng(p[0], p[1]))
+            .toList();
+
+        if (points.isNotEmpty) {
+          // Borde oscuro
+          polylines.add(
+            Polyline(
+              points: points,
+              color: Colors.white.withValues(alpha: 0.96),
+              strokeWidth: 10,
+            ),
+          );
+          polylines.add(
+            Polyline(points: points, color: selectedColor, strokeWidth: 6),
+          );
+        }
+      }
+    }
+
+    return polylines;
+  }
+
+  Marker _buildMarker(
+    double lat,
+    double lon,
+    IconData icon,
+    Color color,
+    String label,
+  ) {
+    return Marker(
+      point: LatLng(lat, lon),
+      width: 150,
+      height: 76,
+      alignment: Alignment.topCenter,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 30,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 16),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF202124),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 5),
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.24),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Marker _buildAreaLabel() {
+    return Marker(
+      point: const LatLng(
+        AppConfig.demoDestinationLat,
+        AppConfig.demoDestinationLon,
+      ),
+      width: 180,
+      height: 36,
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFF1A73E8).withValues(alpha: 0.24),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Text(
+          'Zona demo Tlalpan',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xFF1A73E8),
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+}
